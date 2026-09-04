@@ -3,10 +3,12 @@ import { StyleSheet, View } from 'react-native';
 import { Screen } from '@/components/ui/screen';
 import { Row } from '@/components/ui/row';
 import { Text } from '@/components/ui/text';
-import { exercises } from '@/data/mock';
+import { useWorkoutStore } from '@/store/workout';
 import { fontSize, spacing } from '@/theme/tokens';
 
 export default function LibraryScreen() {
+  const exercises = useWorkoutStore((s) => s.exercises);
+
   return (
     <Screen title="Library">
       <View style={styles.list}>

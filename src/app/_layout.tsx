@@ -47,6 +47,9 @@ export default function RootLayout() {
     <ThemeProvider value={navigationTheme}>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="routine/[id]" />
+        <Stack.Screen name="session/active" />
+        <Stack.Screen name="session/[id]" />
       </Stack>
     </ThemeProvider>
   );

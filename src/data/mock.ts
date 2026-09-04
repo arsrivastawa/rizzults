@@ -141,6 +141,108 @@ export const routines: Routine[] = [
   },
 ];
 
+export type SessionSet = {
+  id: string;
+  weight: number | null;
+  reps: number | null;
+  durationSeconds: number | null;
+  distance: number | null;
+};
+
+export type SessionExercise = {
+  exerciseId: string;
+  sets: SessionSet[];
+};
+
+export type Session = {
+  id: string;
+  routineName: string;
+  dateLabel: string;
+  startTime: string;
+  durationSeconds: number;
+  exercises: SessionExercise[];
+};
+
+function seedSet(
+  weight: number | null,
+  reps: number | null,
+  durationSeconds: number | null = null,
+  distance: number | null = null,
+): SessionSet {
+  return { id: `seed-${Math.random().toString(36).slice(2, 8)}`, weight, reps, durationSeconds, distance };
+}
+
+export const initialSessions: Session[] = [
+  {
+    id: 'ss-001',
+    routineName: 'Push Day',
+    dateLabel: 'Yesterday',
+    startTime: '6:42 AM',
+    durationSeconds: 3120,
+    exercises: [
+      {
+        exerciseId: 'ex-001',
+        sets: [
+          seedSet(60, 8),
+          seedSet(60, 8),
+          seedSet(65, 6),
+          seedSet(65, 6),
+        ],
+      },
+      {
+        exerciseId: 'ex-005',
+        sets: [seedSet(40, 10), seedSet(40, 10), seedSet(42.5, 8)],
+      },
+      {
+        exerciseId: 'ex-009',
+        sets: [seedSet(15, 12), seedSet(15, 10), seedSet(17.5, 8)],
+      },
+    ],
+  },
+  {
+    id: 'ss-002',
+    routineName: 'Pull Day',
+    dateLabel: 'Aug 31',
+    startTime: '7:05 AM',
+    durationSeconds: 3660,
+    exercises: [
+      {
+        exerciseId: 'ex-003',
+        sets: [seedSet(100, 5), seedSet(120, 5), seedSet(130, 5)],
+      },
+      {
+        exerciseId: 'ex-004',
+        sets: [seedSet(null, 8), seedSet(null, 8), seedSet(null, 10), seedSet(null, 7)],
+      },
+      {
+        exerciseId: 'ex-006',
+        sets: [seedSet(70, 8), seedSet(70, 8), seedSet(75, 6)],
+      },
+    ],
+  },
+  {
+    id: 'ss-003',
+    routineName: 'Leg Day',
+    dateLabel: 'Aug 28',
+    startTime: '6:15 AM',
+    durationSeconds: 3480,
+    exercises: [
+      {
+        exerciseId: 'ex-002',
+        sets: [seedSet(80, 8), seedSet(90, 8), seedSet(95, 6), seedSet(95, 6)],
+      },
+      {
+        exerciseId: 'ex-010',
+        sets: [seedSet(160, 12), seedSet(180, 10), seedSet(180, 10)],
+      },
+      {
+        exerciseId: 'ex-007',
+        sets: [seedSet(null, null, 60), seedSet(null, null, 75), seedSet(null, null, 60)],
+      },
+    ],
+  },
+];
+
 export function getExercise(id: string): Exercise | undefined {
   return exercises.find((e) => e.id === id);
 }
