@@ -4,7 +4,7 @@ import { FlatList, StyleSheet, View } from 'react-native';
 import { Header } from '@/components/ui/header';
 import { Row } from '@/components/ui/row';
 import { Text } from '@/components/ui/text';
-import type { SessionExercise, SessionSet } from '@/data/mock';
+import type { SessionExercise, SessionSet } from '@/types';
 import { formatDuration } from '@/lib/format';
 import { trackingFields, type TrackingField } from '@/lib/tracking';
 import { useWorkoutStore } from '@/store/workout';
@@ -38,7 +38,8 @@ function SetLine({ index, fields, set }: { index: number; fields: TrackingField[
 
 export default function SessionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const session = useWorkoutStore((s) => s.sessions.find((sess) => sess.id === id));
+  const sessionId = Number(id);
+  const session = useWorkoutStore((s) => s.sessions.find((sess) => sess.id === sessionId));
   const exercises = useWorkoutStore((s) => s.exercises);
 
   if (!session) {
@@ -76,7 +77,7 @@ export default function SessionDetailScreen() {
 
   return (
     <View style={styles.screen}>
-      <Header title={session.routineName} />
+      <Header title={session.routineName ?? 'Workout'} />
       <FlatList
         data={session.exercises}
         keyExtractor={(item) => item.exerciseId}
@@ -88,7 +89,7 @@ export default function SessionDetailScreen() {
               {session.dateLabel}, {session.startTime}
             </Text>
             <Text variant="numeral" style={styles.duration}>
-              {formatDuration(session.durationSeconds)}
+              {formatDuration(session.durationSeconds ?? 0)}
             </Text>
           </View>
         }

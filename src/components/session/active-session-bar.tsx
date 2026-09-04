@@ -23,7 +23,7 @@ export function ActiveSessionBar() {
       <View style={styles.info}>
         <Text variant="label">Workout in progress</Text>
         <Text variant="heading" style={styles.name}>
-          {activeSession.routineName}
+          {activeSession.routineName ?? 'Workout'}
         </Text>
       </View>
       <View style={styles.timer}>

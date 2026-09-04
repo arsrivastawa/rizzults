@@ -6,13 +6,13 @@ import { FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { Header } from '@/components/ui/header';
 import { Row } from '@/components/ui/row';
 import { Text } from '@/components/ui/text';
-import { getExercise } from '@/data/mock';
 import { useWorkoutStore } from '@/store/workout';
 import { colors, fontSize, radius, spacing } from '@/theme/tokens';
 
 export default function RoutineEditorScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const routine = useWorkoutStore((s) => s.routines.find((r) => r.id === id));
+  const routineId = Number(id);
+  const routine = useWorkoutStore((s) => s.routines.find((r) => r.id === routineId));
   const addExerciseToRoutine = useWorkoutStore((s) => s.addExerciseToRoutine);
   const removeExerciseFromRoutine = useWorkoutStore((s) => s.removeExerciseFromRoutine);
   const moveExercise = useWorkoutStore((s) => s.moveExercise);
@@ -53,9 +53,12 @@ export default function RoutineEditorScreen() {
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
         renderItem={({ item, index }) => {
-          const exercise = getExercise(item.exerciseId);
-          const targets = [`${item.targetSets} sets`];
-          if (item.targetRepMin != null) {
+          const exercise = exercises.find((e) => e.id === item.exerciseId);
+          const targets: string[] = [];
+          if (item.targetSets != null) {
+            targets.push(`${item.targetSets} sets`);
+          }
+          if (item.targetRepMin != null && item.targetRepMax != null) {
             targets.push(`${item.targetRepMin}–${item.targetRepMax} reps`);
           }
           return (
@@ -64,7 +67,7 @@ export default function RoutineEditorScreen() {
                 <Text variant="heading" style={styles.exerciseName}>
                   {exercise?.name ?? 'Unknown exercise'}
                 </Text>
-                <Text variant="label">{targets.join(', ')}</Text>
+                {targets.length > 0 ? <Text variant="label">{targets.join(', ')}</Text> : null}
               </View>
               <Pressable
                 onPress={() => moveExercise(routine.id, index, index - 1)}
@@ -108,8 +111,8 @@ export default function RoutineEditorScreen() {
               <Text color={colors.accent}>Add exercise</Text>
             </Pressable>
             <Pressable
-              onPress={() => {
-                startSession(routine.id);
+              onPress={async () => {
+                await startSession(routine.id);
                 router.replace('/session/active');
               }}
               style={({ pressed }) => [styles.startButton, pressed && styles.pressed]}>
@@ -150,7 +153,7 @@ export default function RoutineEditorScreen() {
                     {item.name}
                   </Text>
                   <Text variant="label">
-                    {item.primaryMuscles}
+                    {item.primaryMuscles.split(',')[0]}
                     {item.equipment ? `, ${item.equipment}` : ''}
                   </Text>
                 </Row>

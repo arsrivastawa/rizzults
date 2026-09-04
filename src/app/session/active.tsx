@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ExerciseSection } from '@/components/session/exercise-section';
 import { Text } from '@/components/ui/text';
-import type { SessionExercise } from '@/data/mock';
+import type { SessionExercise } from '@/types';
 import { useElapsedTime } from '@/hooks/use-elapsed-time';
 import { formatClock } from '@/lib/format';
 import { useWorkoutStore } from '@/store/workout';
@@ -44,10 +44,10 @@ export default function ActiveSessionScreen() {
     );
   }
 
-  const handleFinish = () => {
-    const sessionId = finishSession();
-    if (sessionId) {
-      router.replace({ pathname: '/session/[id]', params: { id: sessionId } });
+  const handleFinish = async () => {
+    const sessionId = await finishSession();
+    if (sessionId != null) {
+      router.replace({ pathname: '/session/[id]', params: { id: String(sessionId) } });
     }
   };
 
@@ -60,8 +60,8 @@ export default function ActiveSessionScreen() {
       <ExerciseSection
         exercise={exercise}
         sets={item.sets}
-        onChangeSet={(setId, field, value) => updateSet(item.exerciseId, setId, field, value)}
-        onRemoveSet={(setId) => removeSet(item.exerciseId, setId)}
+        onChangeSet={(setId, field, value) => updateSet(setId, field, value)}
+        onRemoveSet={(setId) => removeSet(setId)}
         onAddSet={() => addSet(item.exerciseId)}
       />
     );
@@ -78,7 +78,7 @@ export default function ActiveSessionScreen() {
         </Pressable>
         <View style={styles.headerCenter}>
           <Text variant="heading" style={styles.headerTitle} numberOfLines={1}>
-            {activeSession.routineName}
+            {activeSession.routineName ?? 'Workout'}
           </Text>
           <Text variant="numeral" style={styles.timer}>
             {formatClock(elapsed)}

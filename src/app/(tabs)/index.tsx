@@ -19,7 +19,9 @@ export default function RoutinesScreen() {
         {routines.map((routine) => (
           <Row
             key={routine.id}
-            onPress={() => router.push({ pathname: '/routine/[id]', params: { id: routine.id } })}>
+            onPress={() =>
+              router.push({ pathname: '/routine/[id]', params: { id: String(routine.id) } })
+            }>
             <Text variant="heading" style={styles.name}>
               {routine.name}
             </Text>

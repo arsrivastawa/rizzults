@@ -9,6 +9,7 @@ import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 
+import { useWorkoutStore } from '@/store/workout';
 import { colors } from '@/theme/tokens';
 
 SplashScreen.preventAutoHideAsync();
@@ -32,14 +33,22 @@ export default function RootLayout() {
     Inter_700Bold,
     Inter_800ExtraBold,
   });
+  const hydrated = useWorkoutStore((s) => s.hydrated);
 
   useEffect(() => {
-    if (fontsLoaded) {
+    useWorkoutStore
+      .getState()
+      .hydrate()
+      .catch((error) => console.error('Failed to hydrate workout data', error));
+  }, []);
+
+  useEffect(() => {
+    if (fontsLoaded && hydrated) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded]);
+  }, [fontsLoaded, hydrated]);
 
-  if (!fontsLoaded) {
+  if (!fontsLoaded || !hydrated) {
     return null;
   }
 

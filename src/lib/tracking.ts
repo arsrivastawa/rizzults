@@ -1,9 +1,7 @@
-import type { TrackingType } from '@/data/mock';
-
-export type TrackingFieldKey = 'weight' | 'reps' | 'durationSeconds' | 'distance';
+import type { SessionSetField, TrackingType } from '@/types';
 
 export type TrackingField = {
-  key: TrackingFieldKey;
+  key: SessionSetField;
   label: string;
   unit: string;
   placeholder: string;

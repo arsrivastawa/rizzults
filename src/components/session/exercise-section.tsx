@@ -3,14 +3,14 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { SetRow } from '@/components/session/set-row';
 import { Text } from '@/components/ui/text';
-import type { Exercise, SessionSet } from '@/data/mock';
+import type { Exercise, SessionSet, SessionSetField } from '@/types';
 import { colors, fontSize, radius, spacing } from '@/theme/tokens';
 
 type Props = {
   exercise: Exercise;
   sets: SessionSet[];
-  onChangeSet: (setId: string, field: keyof SessionSet, value: number | null) => void;
-  onRemoveSet: (setId: string) => void;
+  onChangeSet: (setId: number, field: SessionSetField, value: number | null) => void;
+  onRemoveSet: (setId: number) => void;
   onAddSet: () => void;
 };
 

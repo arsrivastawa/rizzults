@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
-import type { SessionSet, TrackingType } from '@/data/mock';
+import type { SessionSet, SessionSetField, TrackingType } from '@/types';
 import { trackingFields } from '@/lib/tracking';
 import { colors, fontSize, spacing } from '@/theme/tokens';
 
@@ -11,7 +11,7 @@ type Props = {
   index: number;
   trackingType: TrackingType;
   set: SessionSet;
-  onChange: (field: keyof SessionSet, value: number | null) => void;
+  onChange: (field: SessionSetField, value: number | null) => void;
   onRemove: () => void;
 };
 

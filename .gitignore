@@ -1,6 +1,7 @@
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
 # dependencies
+.opencode/
 node_modules/
 
 # Expo
@@ -44,4 +45,3 @@ yarn-error.*
 AGENTS.md
 spec.md
 SKILL.md
-.opencode/

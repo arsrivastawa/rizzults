@@ -34,14 +34,14 @@ export default function HistoryScreen() {
           <Row
             key={session.id}
             onPress={() =>
-              router.push({ pathname: '/session/[id]', params: { id: session.id } })
+              router.push({ pathname: '/session/[id]', params: { id: String(session.id) } })
             }>
             <View style={styles.rowTop}>
               <Text variant="heading" style={styles.name}>
-                {session.routineName}
+                {session.routineName ?? 'Workout'}
               </Text>
               <Text variant="numeral" style={styles.duration}>
-                {formatDuration(session.durationSeconds)}
+                {formatDuration(session.durationSeconds ?? 0)}
               </Text>
             </View>
             <Text variant="label">
