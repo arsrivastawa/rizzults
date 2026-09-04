@@ -3,23 +3,37 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { SetRow } from '@/components/session/set-row';
 import { Text } from '@/components/ui/text';
-import type { Exercise, SessionSet, SessionSetField } from '@/types';
+import type { LastSet } from '@/db/repo';
+import { formatSetSummary } from '@/lib/units';
+import { useWorkoutStore } from '@/store/workout';
 import { colors, fontSize, radius, spacing } from '@/theme/tokens';
+import type { Exercise, SessionSet, SessionSetField } from '@/types';
 
 type Props = {
   exercise: Exercise;
   sets: SessionSet[];
+  last?: LastSet | null;
   onChangeSet: (setId: number, field: SessionSetField, value: number | null) => void;
   onRemoveSet: (setId: number) => void;
   onAddSet: () => void;
 };
 
-export function ExerciseSection({ exercise, sets, onChangeSet, onRemoveSet, onAddSet }: Props) {
+export function ExerciseSection({ exercise, sets, last, onChangeSet, onRemoveSet, onAddSet }: Props) {
+  const unit = useWorkoutStore((s) => s.unit);
+  const summary = last ? formatSetSummary(exercise.trackingType, last, unit) : '';
+
   return (
     <View style={styles.card}>
-      <Text variant="heading" style={styles.name}>
-        {exercise.name}
-      </Text>
+      <View style={styles.headingRow}>
+        <Text variant="heading" style={styles.name}>
+          {exercise.name}
+        </Text>
+        {summary ? (
+          <Text variant="label" style={styles.last}>
+            Last: {summary}
+          </Text>
+        ) : null}
+      </View>
       <View style={styles.sets}>
         {sets.map((set, index) => (
           <SetRow
@@ -50,8 +64,18 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     gap: spacing.md,
   },
+  headingRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
   name: {
     fontSize: fontSize.body,
+    flexShrink: 1,
+  },
+  last: {
+    flexShrink: 0,
   },
   sets: {
     gap: spacing.sm,

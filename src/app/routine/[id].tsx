@@ -1,11 +1,12 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
 
 import { Header } from '@/components/ui/header';
 import { Row } from '@/components/ui/row';
 import { Text } from '@/components/ui/text';
+import { TextField } from '@/components/ui/text-field';
 import { useWorkoutStore } from '@/store/workout';
 import { colors, fontSize, radius, spacing } from '@/theme/tokens';
 
@@ -16,11 +17,15 @@ export default function RoutineEditorScreen() {
   const addExerciseToRoutine = useWorkoutStore((s) => s.addExerciseToRoutine);
   const removeExerciseFromRoutine = useWorkoutStore((s) => s.removeExerciseFromRoutine);
   const moveExercise = useWorkoutStore((s) => s.moveExercise);
+  const renameRoutine = useWorkoutStore((s) => s.renameRoutine);
+  const deleteRoutine = useWorkoutStore((s) => s.deleteRoutine);
   const exercises = useWorkoutStore((s) => s.exercises);
   const startSession = useWorkoutStore((s) => s.startSession);
   const router = useRouter();
 
   const [showAdd, setShowAdd] = useState(false);
+  const [showRename, setShowRename] = useState(false);
+  const [renameText, setRenameText] = useState('');
 
   const available = useMemo(() => {
     if (!routine) {
@@ -43,9 +48,46 @@ export default function RoutineEditorScreen() {
     );
   }
 
+  const canRemoveLast = routine.exercises.length <= 1;
+  const canStart = routine.exercises.length > 0;
+
+  const handleDelete = () => {
+    Alert.alert('Delete routine', 'This routine and its exercises will be removed.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          await deleteRoutine(routine.id);
+          router.back();
+        },
+      },
+    ]);
+  };
+
+  const handleRename = async () => {
+    const trimmed = renameText.trim();
+    if (trimmed) {
+      await renameRoutine(routine.id, trimmed);
+    }
+    setShowRename(false);
+  };
+
   return (
     <View style={styles.screen}>
-      <Header title={routine.name} />
+      <Header
+        title={routine.name}
+        right={
+          <Pressable
+            onPress={() => {
+              setRenameText(routine.name);
+              setShowRename(true);
+            }}
+            hitSlop={12}>
+            <Ionicons name="pencil" size={20} color={colors.textPrimary} />
+          </Pressable>
+        }
+      />
 
       <FlatList
         data={routine.exercises}
@@ -95,9 +137,14 @@ export default function RoutineEditorScreen() {
               </Pressable>
               <Pressable
                 onPress={() => removeExerciseFromRoutine(routine.id, item.exerciseId)}
+                disabled={canRemoveLast}
                 hitSlop={8}
                 style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}>
-                <Ionicons name="close" size={20} color={colors.danger} />
+                <Ionicons
+                  name="close"
+                  size={20}
+                  color={canRemoveLast ? colors.border : colors.danger}
+                />
               </Pressable>
             </Row>
           );
@@ -115,15 +162,40 @@ export default function RoutineEditorScreen() {
                 await startSession(routine.id);
                 router.replace('/session/active');
               }}
-              style={({ pressed }) => [styles.startButton, pressed && styles.pressed]}>
+              disabled={!canStart}
+              style={({ pressed }) => [
+                styles.startButton,
+                !canStart && styles.startButtonDisabled,
+                pressed && styles.pressed,
+              ]}>
               <Ionicons name="play" size={20} color={colors.background} />
               <Text variant="heading" style={styles.startLabel}>
                 Start workout
               </Text>
             </Pressable>
+            <Pressable
+              onPress={handleDelete}
+              style={({ pressed }) => [styles.deleteButton, pressed && styles.pressed]}>
+              <Text color={colors.danger}>Delete routine</Text>
+            </Pressable>
           </View>
         }
       />
+      <Modal visible={showRename} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowRename(false)}>
+        <View style={styles.modal}>
+          <View style={styles.modalHeader}>
+            <Text variant="heading" style={styles.modalTitle}>
+              Rename routine
+            </Text>
+            <Pressable onPress={handleRename} hitSlop={8}>
+              <Text color={colors.accent}>Save</Text>
+            </Pressable>
+          </View>
+          <View style={styles.body}>
+            <TextField label="Name" value={renameText} onChangeText={setRenameText} autoFocus />
+          </View>
+        </View>
+      </Modal>
 
       <Modal
         visible={showAdd}
@@ -226,6 +298,22 @@ const styles = StyleSheet.create({
   startLabel: {
     fontSize: fontSize.body,
     color: colors.background,
+  },
+  startButtonDisabled: {
+    opacity: 0.4,
+  },
+  deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 48,
+    borderRadius: radius.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderStyle: 'dashed',
+  },
+  body: {
+    padding: spacing.lg,
   },
   modal: {
     flex: 1,

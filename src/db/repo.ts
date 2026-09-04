@@ -320,3 +320,113 @@ export async function listSessions(): Promise<Session[]> {
   }
   return sessions;
 }
+
+export async function getSetting(key: string): Promise<string | null> {
+  const row = await getDb().getFirstAsync<{ value: string }>(
+    'SELECT value FROM settings WHERE key = ?',
+    key,
+  );
+  return row?.value ?? null;
+}
+
+export async function setSetting(key: string, value: string): Promise<void> {
+  await getDb().runAsync(
+    'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
+    key,
+    value,
+  );
+}
+
+export type NewExerciseInput = {
+  name: string;
+  category: string | null;
+  equipment: string | null;
+  primaryMuscles: string;
+  secondaryMuscles: string;
+  instructions: string;
+  trackingType: TrackingType;
+};
+
+export async function createCustomExercise(input: NewExerciseInput): Promise<Exercise> {
+  const db = getDb();
+  const id = `custom-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+  await db.runAsync(
+    `INSERT INTO exercises (id, name, category, equipment, primary_muscles, secondary_muscles, mechanic, force, instructions, tracking_type, is_custom)
+     VALUES (?, ?, ?, ?, ?, ?, NULL, NULL, ?, ?, 1)`,
+    id,
+    input.name,
+    input.category,
+    input.equipment,
+    input.primaryMuscles,
+    input.secondaryMuscles,
+    input.instructions,
+    input.trackingType,
+  );
+  return {
+    id,
+    name: input.name,
+    category: input.category,
+    equipment: input.equipment,
+    primaryMuscles: input.primaryMuscles,
+    secondaryMuscles: input.secondaryMuscles,
+    mechanic: null,
+    force: null,
+    instructions: input.instructions,
+    trackingType: input.trackingType,
+    isCustom: true,
+  };
+}
+
+export type LastSet = {
+  weight: number | null;
+  reps: number | null;
+  durationSeconds: number | null;
+  distance: number | null;
+};
+
+export async function getLastSet(exerciseId: string): Promise<LastSet | null> {
+  const row = await getDb().getFirstAsync<{ weight: number | null; reps: number | null; duration_seconds: number | null; distance: number | null }>(
+    `SELECT ss.weight, ss.reps, ss.duration_seconds, ss.distance
+     FROM session_sets ss
+     JOIN sessions s ON s.id = ss.session_id
+     WHERE ss.exercise_id = ? AND s.end_time IS NOT NULL
+     ORDER BY s.start_time DESC, ss.id DESC
+     LIMIT 1`,
+    exerciseId,
+  );
+  if (!row) {
+    return null;
+  }
+  return {
+    weight: row.weight,
+    reps: row.reps,
+    durationSeconds: row.duration_seconds,
+    distance: row.distance,
+  };
+}
+
+export async function renameRoutine(routineId: number, name: string): Promise<void> {
+  await getDb().runAsync(
+    'UPDATE routines SET name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+    name,
+    routineId,
+  );
+}
+
+export async function createRoutine(name = 'New Routine'): Promise<number> {
+  const db = getDb();
+  const row = await db.getFirstAsync<{ maxPos: number | null }>('SELECT MAX(position) AS maxPos FROM routines');
+  const position = (row?.maxPos ?? -1) + 1;
+  const result = await db.runAsync('INSERT INTO routines (name, notes, position) VALUES (?, NULL, ?)', name, position);
+  return result.lastInsertRowId;
+}
+
+export async function deleteRoutine(routineId: number): Promise<void> {
+  const db = getDb();
+  await db.runAsync('UPDATE sessions SET routine_id = NULL WHERE routine_id = ?', routineId);
+  await db.runAsync('DELETE FROM routines WHERE id = ?', routineId);
+}
+
+export async function deleteSession(sessionId: number): Promise<void> {
+  await getDb().runAsync('DELETE FROM sessions WHERE id = ?', sessionId);
+}

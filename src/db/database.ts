@@ -1,6 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 
-import { SCHEMA_V1 } from '@/db/schema';
+import { MIGRATIONS } from '@/db/schema';
 import { seedIfEmpty } from '@/db/seed';
 
 let db: SQLite.SQLiteDatabase | null = null;
@@ -21,9 +21,10 @@ export function initDatabase(): Promise<SQLite.SQLiteDatabase> {
       await database.execAsync('PRAGMA foreign_keys = ON;');
 
       const versionRow = await database.getFirstAsync<{ user_version: number }>('PRAGMA user_version;');
-      if ((versionRow?.user_version ?? 0) < 1) {
-        await database.execAsync(SCHEMA_V1);
-        await database.execAsync('PRAGMA user_version = 1;');
+      let version = versionRow?.user_version ?? 0;
+      for (; version < MIGRATIONS.length; version += 1) {
+        await database.execAsync(MIGRATIONS[version]);
+        await database.execAsync(`PRAGMA user_version = ${version + 1};`);
       }
 
       await seedIfEmpty(database);

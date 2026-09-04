@@ -1,4 +1,5 @@
-export const SCHEMA_V1 = `
+export const MIGRATIONS: string[] = [
+  `
 CREATE TABLE IF NOT EXISTS exercises (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -59,4 +60,11 @@ CREATE TABLE IF NOT EXISTS session_sets (
   completed INTEGER DEFAULT 1,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
-`;
+`,
+  `
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+`,
+];

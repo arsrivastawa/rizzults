@@ -8,6 +8,7 @@ import { Text } from '@/components/ui/text';
 import type { SessionExercise } from '@/types';
 import { useElapsedTime } from '@/hooks/use-elapsed-time';
 import { formatClock } from '@/lib/format';
+import { isEmptySet } from '@/lib/units';
 import { useWorkoutStore } from '@/store/workout';
 import { colors, fontSize, spacing } from '@/theme/tokens';
 
@@ -17,12 +18,15 @@ export default function ActiveSessionScreen() {
 
   const activeSession = useWorkoutStore((s) => s.activeSession);
   const exercises = useWorkoutStore((s) => s.exercises);
+  const lastSets = useWorkoutStore((s) => s.lastSets);
   const addSet = useWorkoutStore((s) => s.addSet);
   const removeSet = useWorkoutStore((s) => s.removeSet);
   const updateSet = useWorkoutStore((s) => s.updateSet);
   const finishSession = useWorkoutStore((s) => s.finishSession);
 
   const elapsed = useElapsedTime(activeSession?.startedAt ?? null);
+  const hasCompleted =
+    activeSession?.exercises.some((e) => e.sets.some((s) => !isEmptySet(s))) ?? false;
 
   if (!activeSession) {
     return (
@@ -60,6 +64,7 @@ export default function ActiveSessionScreen() {
       <ExerciseSection
         exercise={exercise}
         sets={item.sets}
+        last={lastSets[item.exerciseId] ?? null}
         onChangeSet={(setId, field, value) => updateSet(setId, field, value)}
         onRemoveSet={(setId) => removeSet(setId)}
         onAddSet={() => addSet(item.exerciseId)}
@@ -84,8 +89,12 @@ export default function ActiveSessionScreen() {
             {formatClock(elapsed)}
           </Text>
         </View>
-        <Pressable onPress={handleFinish} hitSlop={12} style={({ pressed }) => pressed && styles.pressed}>
-          <Text color={colors.accent}>Finish</Text>
+        <Pressable
+          onPress={handleFinish}
+          disabled={!hasCompleted}
+          hitSlop={12}
+          style={({ pressed }) => pressed && styles.pressed}>
+          <Text color={hasCompleted ? colors.accent : colors.textSecondary}>Finish</Text>
         </Pressable>
       </View>
 

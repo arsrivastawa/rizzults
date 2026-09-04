@@ -3,9 +3,11 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
-import type { SessionSet, SessionSetField, TrackingType } from '@/types';
 import { trackingFields } from '@/lib/tracking';
+import { formatNumber, fromDisplayWeight, toDisplayWeight } from '@/lib/units';
+import { useWorkoutStore } from '@/store/workout';
 import { colors, fontSize, spacing } from '@/theme/tokens';
+import type { SessionSet, SessionSetField, TrackingType } from '@/types';
 
 type Props = {
   index: number;
@@ -16,6 +18,7 @@ type Props = {
 };
 
 export function SetRow({ index, trackingType, set, onChange, onRemove }: Props) {
+  const unit = useWorkoutStore((s) => s.unit);
   const fields = trackingFields[trackingType];
 
   return (
@@ -23,19 +26,40 @@ export function SetRow({ index, trackingType, set, onChange, onRemove }: Props) 
       <Text variant="numeral" style={styles.index}>
         {index + 1}
       </Text>
-      {fields.map((field) => (
-        <Input
-          key={field.key}
-          value={set[field.key] == null ? '' : String(set[field.key])}
-          onChangeText={(text) => {
-            const normalized = text.trim().replace(',', '.');
-            const parsed = normalized === '' ? null : Number(normalized);
-            onChange(field.key, Number.isFinite(parsed) ? parsed : null);
-          }}
-          unit={field.unit}
-        />
-      ))}
-      <Pressable onPress={onRemove} hitSlop={12} style={({ pressed }) => [styles.remove, pressed && styles.pressed]}>
+      {fields.map((field) => {
+        const isWeight = field.key === 'weight';
+        const displayValue =
+          set[field.key] == null
+            ? ''
+            : isWeight
+              ? formatNumber(toDisplayWeight(set[field.key] as number, unit))
+              : String(set[field.key]);
+        const unitLabel = isWeight ? unit : field.unit;
+        return (
+          <Input
+            key={field.key}
+            value={displayValue}
+            onChangeText={(text) => {
+              const normalized = text.trim().replace(',', '.');
+              if (normalized === '') {
+                onChange(field.key, null);
+                return;
+              }
+              const parsed = Number(normalized);
+              if (!Number.isFinite(parsed)) {
+                onChange(field.key, null);
+                return;
+              }
+              onChange(field.key, isWeight ? fromDisplayWeight(parsed, unit) : parsed);
+            }}
+            unit={unitLabel}
+          />
+        );
+      })}
+      <Pressable
+        onPress={onRemove}
+        hitSlop={12}
+        style={({ pressed }) => [styles.remove, pressed && styles.pressed]}>
         <Ionicons name="close" size={18} color={colors.textSecondary} />
       </Pressable>
     </View>
