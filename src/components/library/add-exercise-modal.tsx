@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
 import { Text } from '@/components/ui/text';
 import { TextField } from '@/components/ui/text-field';
@@ -69,7 +70,10 @@ export function AddExerciseModal({ visible, onClose }: Props) {
           </Pressable>
         </View>
 
-        <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+        <KeyboardAwareScrollView
+          contentContainerStyle={styles.body}
+          keyboardShouldPersistTaps="handled"
+          bottomOffset={spacing.xl}>
           <TextField
             label="Name"
             value={name}
@@ -103,7 +107,7 @@ export function AddExerciseModal({ visible, onClose }: Props) {
 
           <TextField label="Primary muscles" value={muscle} onChangeText={setMuscle} placeholder="e.g. Shoulders" />
           <TextField label="Equipment (optional)" value={equipment} onChangeText={setEquipment} placeholder="e.g. Cable" />
-        </ScrollView>
+        </KeyboardAwareScrollView>
       </View>
     </Modal>
   );

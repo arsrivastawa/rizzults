@@ -2,17 +2,21 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Alert, FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Header } from '@/components/ui/header';
 import { Row } from '@/components/ui/row';
 import { Text } from '@/components/ui/text';
 import { TextField } from '@/components/ui/text-field';
+import { SearchBar } from '@/components/ui/search-bar';
+import { filterByName } from '@/lib/search';
 import { useWorkoutStore } from '@/store/workout';
 import { colors, fontSize, radius, spacing } from '@/theme/tokens';
 
 export default function RoutineEditorScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const routineId = Number(id);
+  const insets = useSafeAreaInsets();
   const routine = useWorkoutStore((s) => s.routines.find((r) => r.id === routineId));
   const addExerciseToRoutine = useWorkoutStore((s) => s.addExerciseToRoutine);
   const removeExerciseFromRoutine = useWorkoutStore((s) => s.removeExerciseFromRoutine);
@@ -26,6 +30,7 @@ export default function RoutineEditorScreen() {
   const [showAdd, setShowAdd] = useState(false);
   const [showRename, setShowRename] = useState(false);
   const [renameText, setRenameText] = useState('');
+  const [addQuery, setAddQuery] = useState('');
 
   const available = useMemo(() => {
     if (!routine) {
@@ -34,6 +39,11 @@ export default function RoutineEditorScreen() {
     const inRoutine = new Set(routine.exercises.map((re) => re.exerciseId));
     return exercises.filter((e) => !inRoutine.has(e.id));
   }, [routine, exercises]);
+
+  const filteredAvailable = useMemo(
+    () => filterByName(available, addQuery),
+    [available, addQuery],
+  );
 
   if (!routine) {
     return (
@@ -92,7 +102,7 @@ export default function RoutineEditorScreen() {
       <FlatList
         data={routine.exercises}
         keyExtractor={(item) => item.exerciseId}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + spacing.xl }]}
         showsVerticalScrollIndicator={false}
         renderItem={({ item, index }) => {
           const exercise = exercises.find((e) => e.id === item.exerciseId);
@@ -211,32 +221,38 @@ export default function RoutineEditorScreen() {
               <Text color={colors.accent}>Done</Text>
             </Pressable>
           </View>
-          <FlatList
-            data={available}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.list}
-            showsVerticalScrollIndicator={false}
-            renderItem={({ item }) => (
-              <Pressable
-                onPress={() => addExerciseToRoutine(routine.id, item.id)}
-                style={({ pressed }) => pressed && styles.pressed}>
-                <Row>
-                  <Text variant="heading" style={styles.exerciseName}>
-                    {item.name}
-                  </Text>
+          <View style={styles.modalBody}>
+            <SearchBar value={addQuery} onChangeText={setAddQuery} />
+            <FlatList
+              data={filteredAvailable}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + spacing.xl }]}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              renderItem={({ item }) => (
+                <Pressable
+                  onPress={() => addExerciseToRoutine(routine.id, item.id)}
+                  style={({ pressed }) => pressed && styles.pressed}>
+                  <Row>
+                    <Text variant="heading" style={styles.exerciseName}>
+                      {item.name}
+                    </Text>
+                    <Text variant="label">
+                      {item.primaryMuscles.split(',')[0]}
+                      {item.equipment ? `, ${item.equipment}` : ''}
+                    </Text>
+                  </Row>
+                </Pressable>
+              )}
+              ListEmptyComponent={
+                <View style={styles.empty}>
                   <Text variant="label">
-                    {item.primaryMuscles.split(',')[0]}
-                    {item.equipment ? `, ${item.equipment}` : ''}
+                    {addQuery ? 'No exercises match your search.' : 'All exercises are already in this routine.'}
                   </Text>
-                </Row>
-              </Pressable>
-            )}
-            ListEmptyComponent={
-              <View style={styles.empty}>
-                <Text variant="label">All exercises are already in this routine.</Text>
-              </View>
-            }
-          />
+                </View>
+              }
+            />
+          </View>
         </View>
       </Modal>
     </View>
@@ -330,6 +346,9 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: fontSize.section,
+  },
+  modalBody: {
+    flex: 1,
   },
   empty: {
     flex: 1,

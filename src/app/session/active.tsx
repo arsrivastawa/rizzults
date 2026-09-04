@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
-import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ExerciseSection } from '@/components/session/exercise-section';
@@ -55,7 +56,7 @@ export default function ActiveSessionScreen() {
     }
   };
 
-  const renderExercise = ({ item }: { item: SessionExercise }) => {
+  const renderExercise = (item: SessionExercise) => {
     const exercise = exercises.find((e) => e.id === item.exerciseId);
     if (!exercise) {
       return null;
@@ -98,13 +99,15 @@ export default function ActiveSessionScreen() {
         </Pressable>
       </View>
 
-      <FlatList
-        data={activeSession.exercises}
-        keyExtractor={(item) => item.exerciseId}
-        contentContainerStyle={styles.list}
+      <KeyboardAwareScrollView
+        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + spacing.xl }]}
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
-        renderItem={renderExercise}
-      />
+        bottomOffset={insets.bottom + spacing.xl}>
+        {activeSession.exercises.map((item) => (
+          <View key={item.exerciseId}>{renderExercise(item)}</View>
+        ))}
+      </KeyboardAwareScrollView>
     </View>
   );
 }

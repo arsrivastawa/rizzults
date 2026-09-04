@@ -8,6 +8,8 @@ import {
 import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { useWorkoutStore } from '@/store/workout';
 import { colors } from '@/theme/tokens';
@@ -53,13 +55,17 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={navigationTheme}>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="routine/[id]" />
-        <Stack.Screen name="session/active" />
-        <Stack.Screen name="session/[id]" />
-      </Stack>
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <KeyboardProvider statusBarTranslucent navigationBarTranslucent>
+        <ThemeProvider value={navigationTheme}>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="routine/[id]" />
+            <Stack.Screen name="session/active" />
+            <Stack.Screen name="session/[id]" />
+          </Stack>
+        </ThemeProvider>
+      </KeyboardProvider>
+    </SafeAreaProvider>
   );
 }

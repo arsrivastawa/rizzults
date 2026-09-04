@@ -1,6 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ExerciseSection } from '@/components/session/exercise-section';
 import { Header } from '@/components/ui/header';
@@ -56,6 +57,7 @@ function SetLine({
 
 export default function SessionDetailScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const sessionId = Number(id);
 
@@ -140,7 +142,7 @@ export default function SessionDetailScreen() {
       <FlatList
         data={session.exercises}
         keyExtractor={(item) => item.exerciseId}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + spacing.xl }]}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <View style={styles.meta}>

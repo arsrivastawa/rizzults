@@ -430,3 +430,118 @@ export async function deleteRoutine(routineId: number): Promise<void> {
 export async function deleteSession(sessionId: number): Promise<void> {
   await getDb().runAsync('DELETE FROM sessions WHERE id = ?', sessionId);
 }
+
+export type ExportSetRow = {
+  date: string;
+  session_id: number;
+  session_start_time: string;
+  session_duration_seconds: number | null;
+  routine_name: string | null;
+  exercise_name: string;
+  category: string | null;
+  exercise_order: number;
+  set_number: number;
+  is_warmup: number;
+  weight: number | null;
+  reps: number | null;
+  duration_seconds: number | null;
+  distance: number | null;
+  rpe: number | null;
+};
+
+export async function getExportRows(): Promise<ExportSetRow[]> {
+  return getDb().getAllAsync<ExportSetRow>(
+    `SELECT s.date AS date,
+            s.id AS session_id,
+            s.start_time AS session_start_time,
+            s.duration_seconds AS session_duration_seconds,
+            r.name AS routine_name,
+            e.name AS exercise_name,
+            e.category AS category,
+            ss.exercise_order AS exercise_order,
+            ss.set_number AS set_number,
+            ss.is_warmup AS is_warmup,
+            ss.weight AS weight,
+            ss.reps AS reps,
+            ss.duration_seconds AS duration_seconds,
+            ss.distance AS distance,
+            ss.rpe AS rpe
+     FROM session_sets ss
+     JOIN sessions s ON s.id = ss.session_id
+     LEFT JOIN routines r ON r.id = s.routine_id
+     JOIN exercises e ON e.id = ss.exercise_id
+     WHERE s.end_time IS NOT NULL
+     ORDER BY s.date DESC, s.start_time DESC, ss.exercise_order ASC, ss.set_number ASC`,
+  );
+}
+
+type SqlValue = string | number | null;
+
+export type BackupData = {
+  version?: number;
+  exportedAt?: string;
+  exercises: Record<string, SqlValue>[];
+  routines: Record<string, SqlValue>[];
+  routine_exercises: Record<string, SqlValue>[];
+  sessions: Record<string, SqlValue>[];
+  session_sets: Record<string, SqlValue>[];
+  settings: Record<string, SqlValue>[];
+};
+
+export async function exportDatabaseData(): Promise<BackupData> {
+  const db = getDb();
+  const [exercises, routines, routine_exercises, sessions, session_sets, settings] = await Promise.all([
+    db.getAllAsync<Record<string, SqlValue>>('SELECT * FROM exercises'),
+    db.getAllAsync<Record<string, SqlValue>>('SELECT * FROM routines'),
+    db.getAllAsync<Record<string, SqlValue>>('SELECT * FROM routine_exercises'),
+    db.getAllAsync<Record<string, SqlValue>>('SELECT * FROM sessions'),
+    db.getAllAsync<Record<string, SqlValue>>('SELECT * FROM session_sets'),
+    db.getAllAsync<Record<string, SqlValue>>('SELECT * FROM settings'),
+  ]);
+  return {
+    version: 2,
+    exportedAt: new Date().toISOString(),
+    exercises,
+    routines,
+    routine_exercises,
+    sessions,
+    session_sets,
+    settings,
+  };
+}
+
+async function insertRows(
+  db: SQLiteDatabase,
+  table: string,
+  rows: Record<string, SqlValue>[],
+): Promise<void> {
+  if (rows.length === 0) {
+    return;
+  }
+  const columns = Object.keys(rows[0]);
+  const placeholders = columns.map(() => '?').join(', ');
+  const sql = `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${placeholders})`;
+  for (const row of rows) {
+    await db.runAsync(sql, columns.map((c) => row[c]));
+  }
+}
+
+export async function restoreDatabaseData(data: BackupData): Promise<void> {
+  const db = getDb();
+  await db.execAsync('PRAGMA foreign_keys = OFF;');
+  try {
+    await db.withTransactionAsync(async () => {
+      await db.execAsync(
+        'DELETE FROM session_sets; DELETE FROM sessions; DELETE FROM routine_exercises; DELETE FROM routines; DELETE FROM exercises; DELETE FROM settings;',
+      );
+      await insertRows(db, 'exercises', data.exercises ?? []);
+      await insertRows(db, 'routines', data.routines ?? []);
+      await insertRows(db, 'routine_exercises', data.routine_exercises ?? []);
+      await insertRows(db, 'sessions', data.sessions ?? []);
+      await insertRows(db, 'session_sets', data.session_sets ?? []);
+      await insertRows(db, 'settings', data.settings ?? []);
+    });
+  } finally {
+    await db.execAsync('PRAGMA foreign_keys = ON;');
+  }
+}

@@ -31,6 +31,7 @@ type WorkoutStore = {
   lastSets: Record<string, LastSet | null>;
 
   hydrate: () => Promise<void>;
+  reloadAll: () => Promise<void>;
   setUnit: (unit: Unit) => Promise<void>;
 
   addExerciseToRoutine: (routineId: number, exerciseId: string) => Promise<void>;
@@ -78,6 +79,19 @@ export const useWorkoutStore = create<WorkoutStore>()((set, get) => ({
     const unit: Unit = storedUnit === 'lb' ? 'lb' : 'kg';
     const lastSets = await loadLastSets(activeSession);
     set({ exercises, routines, sessions, activeSession, unit, lastSets, hydrated: true });
+  },
+
+  reloadAll: async () => {
+    const [exercises, routines, sessions, activeSession, storedUnit] = await Promise.all([
+      repo.listExercises(),
+      repo.listRoutines(),
+      repo.listSessions(),
+      repo.getActiveSession(),
+      repo.getSetting('unit'),
+    ]);
+    const unit: Unit = storedUnit === 'lb' ? 'lb' : 'kg';
+    const lastSets = await loadLastSets(activeSession);
+    set({ exercises, routines, sessions, activeSession, unit, lastSets });
   },
 
   setUnit: async (unit) => {
