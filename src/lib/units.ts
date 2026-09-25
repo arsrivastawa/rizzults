@@ -1,4 +1,5 @@
-import type { LastSet } from '@/db/repo';
+import type { PreviousSet } from '@/db/repo';
+import { formatClock } from '@/lib/format';
 import type { TrackingType } from '@/types';
 
 export type Unit = 'kg' | 'lb';
@@ -23,34 +24,47 @@ export function formatWeight(kg: number, unit: Unit): string {
   return formatNumber(toDisplayWeight(kg, unit));
 }
 
-export function formatSetSummary(trackingType: TrackingType, set: LastSet, unit: Unit): string {
+export function formatPreviousSet(
+  trackingType: TrackingType,
+  set: PreviousSet | null | undefined,
+  unit: Unit,
+): string {
+  if (!set) {
+    return '-';
+  }
   switch (trackingType) {
-    case 'weight_reps':
-      return [set.weight != null ? `${formatWeight(set.weight, unit)} ${unit}` : null, set.reps != null ? `${set.reps} reps` : null]
-        .filter(Boolean)
-        .join(' x ');
+    case 'weight_reps': {
+      const w = set.weight != null ? `${formatWeight(set.weight, unit)}${unit}` : null;
+      const r = set.reps != null ? `${set.reps}` : null;
+      if (w && r) return `${w} x ${r}`;
+      if (w) return w;
+      if (r) return `${r} reps`;
+      return '-';
+    }
     case 'bodyweight_reps':
-      return set.reps != null ? `${set.reps} reps` : '';
+      return set.reps != null ? `${set.reps} reps` : '-';
     case 'count':
-      return set.reps != null ? `${set.reps} reps` : '';
+      return set.reps != null ? `${set.reps}` : '-';
     case 'time':
-      return set.durationSeconds != null ? `${formatNumber(set.durationSeconds)} sec` : '';
-    case 'weight_time':
-      return [
-        set.weight != null ? `${formatWeight(set.weight, unit)} ${unit}` : null,
-        set.durationSeconds != null ? `${formatNumber(set.durationSeconds)} sec` : null,
-      ]
-        .filter(Boolean)
-        .join(' x ');
-    case 'distance_time':
-      return [
-        set.distance != null ? `${formatNumber(set.distance)} km` : null,
-        set.durationSeconds != null ? `${formatNumber(set.durationSeconds)} sec` : null,
-      ]
-        .filter(Boolean)
-        .join(' x ');
+      return set.durationSeconds != null ? formatClock(set.durationSeconds) : '-';
+    case 'weight_time': {
+      const w = set.weight != null ? `${formatWeight(set.weight, unit)}${unit}` : null;
+      const t = set.durationSeconds != null ? formatClock(set.durationSeconds) : null;
+      if (w && t) return `${w} x ${t}`;
+      if (w) return w;
+      if (t) return t;
+      return '-';
+    }
+    case 'distance_time': {
+      const d = set.distance != null ? `${formatNumber(set.distance)}km` : null;
+      const t = set.durationSeconds != null ? formatClock(set.durationSeconds) : null;
+      if (d && t) return `${d} x ${t}`;
+      if (d) return d;
+      if (t) return t;
+      return '-';
+    }
     default:
-      return '';
+      return '-';
   }
 }
 

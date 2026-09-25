@@ -10,6 +10,7 @@ import { Text } from '@/components/ui/text';
 import { TextField } from '@/components/ui/text-field';
 import { SearchBar } from '@/components/ui/search-bar';
 import { filterByName } from '@/lib/search';
+import { getSafeBottomInset, getSafeTopInset } from '@/lib/insets';
 import { useWorkoutStore } from '@/store/workout';
 import { colors, fontSize, radius, spacing } from '@/theme/tokens';
 
@@ -17,6 +18,9 @@ export default function RoutineEditorScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const routineId = Number(id);
   const insets = useSafeAreaInsets();
+  const topInset = getSafeTopInset(insets);
+  const bottomInset = getSafeBottomInset(insets);
+
   const routine = useWorkoutStore((s) => s.routines.find((r) => r.id === routineId));
   const addExerciseToRoutine = useWorkoutStore((s) => s.addExerciseToRoutine);
   const removeExerciseFromRoutine = useWorkoutStore((s) => s.removeExerciseFromRoutine);
@@ -102,7 +106,7 @@ export default function RoutineEditorScreen() {
       <FlatList
         data={routine.exercises}
         keyExtractor={(item) => item.exerciseId}
-        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + spacing.xl }]}
+        contentContainerStyle={[styles.list, { paddingBottom: bottomInset + spacing.xl }]}
         showsVerticalScrollIndicator={false}
         renderItem={({ item, index }) => {
           const exercise = exercises.find((e) => e.id === item.exerciseId);
@@ -193,7 +197,7 @@ export default function RoutineEditorScreen() {
       />
       <Modal visible={showRename} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowRename(false)}>
         <View style={styles.modal}>
-          <View style={styles.modalHeader}>
+          <View style={[styles.modalHeader, { paddingTop: topInset + spacing.sm }]}>
             <Text variant="heading" style={styles.modalTitle}>
               Rename routine
             </Text>
@@ -201,7 +205,7 @@ export default function RoutineEditorScreen() {
               <Text color={colors.accent}>Save</Text>
             </Pressable>
           </View>
-          <View style={styles.body}>
+          <View style={[styles.body, { paddingBottom: bottomInset + spacing.xl }]}>
             <TextField label="Name" value={renameText} onChangeText={setRenameText} autoFocus />
           </View>
         </View>
@@ -213,7 +217,7 @@ export default function RoutineEditorScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowAdd(false)}>
         <View style={styles.modal}>
-          <View style={styles.modalHeader}>
+          <View style={[styles.modalHeader, { paddingTop: topInset + spacing.sm }]}>
             <Text variant="heading" style={styles.modalTitle}>
               Add exercise
             </Text>
@@ -226,7 +230,7 @@ export default function RoutineEditorScreen() {
             <FlatList
               data={filteredAvailable}
               keyExtractor={(item) => item.id}
-              contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + spacing.xl }]}
+              contentContainerStyle={[styles.list, { paddingBottom: bottomInset + spacing.xl }]}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
               renderItem={({ item }) => (

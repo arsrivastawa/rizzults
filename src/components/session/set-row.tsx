@@ -3,8 +3,9 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
+import type { PreviousSet } from '@/db/repo';
 import { trackingFields } from '@/lib/tracking';
-import { formatNumber, fromDisplayWeight, toDisplayWeight } from '@/lib/units';
+import { formatNumber, formatPreviousSet, fromDisplayWeight, toDisplayWeight } from '@/lib/units';
 import { useWorkoutStore } from '@/store/workout';
 import { colors, fontSize, spacing } from '@/theme/tokens';
 import type { SessionSet, SessionSetField, TrackingType } from '@/types';
@@ -13,19 +14,26 @@ type Props = {
   index: number;
   trackingType: TrackingType;
   set: SessionSet;
+  previousSet?: PreviousSet | null;
   onChange: (field: SessionSetField, value: number | null) => void;
   onRemove: () => void;
 };
 
-export function SetRow({ index, trackingType, set, onChange, onRemove }: Props) {
+export function SetRow({ index, trackingType, set, previousSet, onChange, onRemove }: Props) {
   const unit = useWorkoutStore((s) => s.unit);
   const fields = trackingFields[trackingType];
+  const prevText = formatPreviousSet(trackingType, previousSet, unit);
 
   return (
     <View style={styles.row}>
       <Text variant="numeral" style={styles.index}>
         {index + 1}
       </Text>
+      <View style={styles.previousCell}>
+        <Text variant="label" style={styles.previousText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+          {prevText}
+        </Text>
+      </View>
       {fields.map((field) => {
         const isWeight = field.key === 'weight';
         const displayValue =
@@ -77,6 +85,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: fontSize.body,
     color: colors.textSecondary,
+  },
+  previousCell: {
+    minWidth: 60,
+    maxWidth: 90,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xs,
+  },
+  previousText: {
+    fontSize: fontSize.body,
+    color: colors.textSecondary,
+    textAlign: 'center',
   },
   remove: {
     width: 32,

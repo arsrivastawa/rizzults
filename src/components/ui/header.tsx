@@ -7,6 +7,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/ui/text';
 import { colors, fontSize, spacing } from '@/theme/tokens';
 
+import { getSafeTopInset } from '@/lib/insets';
+
 type Props = {
   title: string;
   right?: ReactNode;
@@ -17,9 +19,10 @@ type Props = {
 export function Header({ title, right, onBack, style }: Props) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const topInset = getSafeTopInset(insets);
 
   return (
-    <View style={[styles.bar, { paddingTop: insets.top + spacing.sm }, style]}>
+    <View style={[styles.bar, { paddingTop: topInset + spacing.sm }, style]}>
       <Pressable
         onPress={onBack ?? (() => router.back())}
         hitSlop={12}

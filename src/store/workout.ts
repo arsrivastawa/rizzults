@@ -2,19 +2,15 @@ import { create } from 'zustand';
 
 import { initDatabase } from '@/db/database';
 import * as repo from '@/db/repo';
-import type { LastSet, NewExerciseInput } from '@/db/repo';
+import type { NewExerciseInput, PreviousSet } from '@/db/repo';
 import { isEmptySet, type Unit } from '@/lib/units';
 import type { ActiveSession, Exercise, Routine, Session, SessionSetField, SessionSet } from '@/types';
 
-async function loadLastSets(active: ActiveSession | null): Promise<Record<string, LastSet | null>> {
+async function loadPreviousSets(active: ActiveSession | null): Promise<Record<string, Record<number, PreviousSet>>> {
   if (!active) {
     return {};
   }
-  const result: Record<string, LastSet | null> = {};
-  for (const se of active.exercises) {
-    result[se.exerciseId] = await repo.getLastSet(se.exerciseId);
-  }
-  return result;
+  return repo.getPreviousRoutineSets(active.routineId, active.id);
 }
 
 function nextSetNumber(sets: SessionSet[]): number {
@@ -28,7 +24,7 @@ type WorkoutStore = {
   routines: Routine[];
   sessions: Session[];
   activeSession: ActiveSession | null;
-  lastSets: Record<string, LastSet | null>;
+  previousSets: Record<string, Record<number, PreviousSet>>;
 
   hydrate: () => Promise<void>;
   reloadAll: () => Promise<void>;
@@ -62,7 +58,7 @@ export const useWorkoutStore = create<WorkoutStore>()((set, get) => ({
   routines: [],
   sessions: [],
   activeSession: null,
-  lastSets: {},
+  previousSets: {},
 
   hydrate: async () => {
     if (get().hydrated) {
@@ -77,8 +73,8 @@ export const useWorkoutStore = create<WorkoutStore>()((set, get) => ({
       repo.getSetting('unit'),
     ]);
     const unit: Unit = storedUnit === 'lb' ? 'lb' : 'kg';
-    const lastSets = await loadLastSets(activeSession);
-    set({ exercises, routines, sessions, activeSession, unit, lastSets, hydrated: true });
+    const previousSets = await loadPreviousSets(activeSession);
+    set({ exercises, routines, sessions, activeSession, unit, previousSets, hydrated: true });
   },
 
   reloadAll: async () => {
@@ -90,8 +86,8 @@ export const useWorkoutStore = create<WorkoutStore>()((set, get) => ({
       repo.getSetting('unit'),
     ]);
     const unit: Unit = storedUnit === 'lb' ? 'lb' : 'kg';
-    const lastSets = await loadLastSets(activeSession);
-    set({ exercises, routines, sessions, activeSession, unit, lastSets });
+    const previousSets = await loadPreviousSets(activeSession);
+    set({ exercises, routines, sessions, activeSession, unit, previousSets });
   },
 
   setUnit: async (unit) => {
@@ -137,8 +133,8 @@ export const useWorkoutStore = create<WorkoutStore>()((set, get) => ({
 
   startSession: async (routineId) => {
     const activeSession = await repo.createSession(routineId);
-    const lastSets = await loadLastSets(activeSession);
-    set({ activeSession, lastSets });
+    const previousSets = await loadPreviousSets(activeSession);
+    set({ activeSession, previousSets });
   },
 
   addSet: async (exerciseId) => {
@@ -207,7 +203,7 @@ export const useWorkoutStore = create<WorkoutStore>()((set, get) => ({
     const sessionId = active.id;
     await repo.finishSession(sessionId);
     const sessions = await repo.listSessions();
-    set({ sessions, activeSession: null, lastSets: {} });
+    set({ sessions, activeSession: null, previousSets: {} });
     return sessionId;
   },
 

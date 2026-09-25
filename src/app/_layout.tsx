@@ -11,6 +11,8 @@ import { useEffect } from 'react';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { StatusBar } from 'expo-status-bar';
+
 import { useWorkoutStore } from '@/store/workout';
 import { colors } from '@/theme/tokens';
 
@@ -56,6 +58,7 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
+      <StatusBar style="light" />
       <KeyboardProvider statusBarTranslucent navigationBarTranslucent>
         <ThemeProvider value={navigationTheme}>
           <Stack screenOptions={{ headerShown: false }}>

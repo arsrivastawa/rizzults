@@ -67,4 +67,8 @@ CREATE TABLE IF NOT EXISTS settings (
   value TEXT NOT NULL
 );
 `,
+  `
+CREATE INDEX IF NOT EXISTS idx_sessions_routine_start ON sessions(routine_id, start_time DESC);
+CREATE INDEX IF NOT EXISTS idx_session_sets_session_exercise ON session_sets(session_id, exercise_id, set_number);
+`,
 ];

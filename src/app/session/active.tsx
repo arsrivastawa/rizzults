@@ -13,13 +13,17 @@ import { isEmptySet } from '@/lib/units';
 import { useWorkoutStore } from '@/store/workout';
 import { colors, fontSize, spacing } from '@/theme/tokens';
 
+import { getSafeBottomInset, getSafeTopInset } from '@/lib/insets';
+
 export default function ActiveSessionScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const topInset = getSafeTopInset(insets);
+  const bottomInset = getSafeBottomInset(insets);
 
   const activeSession = useWorkoutStore((s) => s.activeSession);
   const exercises = useWorkoutStore((s) => s.exercises);
-  const lastSets = useWorkoutStore((s) => s.lastSets);
+  const previousSets = useWorkoutStore((s) => s.previousSets);
   const addSet = useWorkoutStore((s) => s.addSet);
   const removeSet = useWorkoutStore((s) => s.removeSet);
   const updateSet = useWorkoutStore((s) => s.updateSet);
@@ -32,7 +36,7 @@ export default function ActiveSessionScreen() {
   if (!activeSession) {
     return (
       <View style={styles.screen}>
-        <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
+        <View style={[styles.header, { paddingTop: topInset + spacing.sm }]}>
           <Pressable
             onPress={() => router.back()}
             hitSlop={12}
@@ -65,7 +69,7 @@ export default function ActiveSessionScreen() {
       <ExerciseSection
         exercise={exercise}
         sets={item.sets}
-        last={lastSets[item.exerciseId] ?? null}
+        previousSetsMap={previousSets[item.exerciseId]}
         onChangeSet={(setId, field, value) => updateSet(setId, field, value)}
         onRemoveSet={(setId) => removeSet(setId)}
         onAddSet={() => addSet(item.exerciseId)}
@@ -75,7 +79,7 @@ export default function ActiveSessionScreen() {
 
   return (
     <View style={styles.screen}>
-      <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
+      <View style={[styles.header, { paddingTop: topInset + spacing.sm }]}>
         <Pressable
           onPress={() => router.back()}
           hitSlop={12}
@@ -100,10 +104,10 @@ export default function ActiveSessionScreen() {
       </View>
 
       <KeyboardAwareScrollView
-        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + spacing.xl }]}
+        contentContainerStyle={[styles.list, { paddingBottom: bottomInset + spacing.xl }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
-        bottomOffset={insets.bottom + spacing.xl}>
+        bottomOffset={bottomInset + spacing.xl}>
         {activeSession.exercises.map((item) => (
           <View key={item.exerciseId}>{renderExercise(item)}</View>
         ))}

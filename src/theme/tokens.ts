@@ -34,9 +34,9 @@ export const typography: Record<'numeral' | 'heading' | 'body' | 'label', TextSt
 };
 
 export const fontSize = {
-  caption: 13,
+  caption: 10,
   label: 15,
-  body: 17,
+  body: 14,
   section: 20,
   title: 28,
   numeral: 20,

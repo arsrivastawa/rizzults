@@ -10,6 +10,7 @@ import { Text } from '@/components/ui/text';
 import { formatDuration } from '@/lib/format';
 import { formatNumber, toDisplayWeight, type Unit } from '@/lib/units';
 import { trackingFields, type TrackingField } from '@/lib/tracking';
+import { getSafeBottomInset } from '@/lib/insets';
 import { useWorkoutStore } from '@/store/workout';
 import { colors, fontSize, radius, spacing } from '@/theme/tokens';
 import type { SessionExercise } from '@/types';
@@ -58,6 +59,7 @@ function SetLine({
 export default function SessionDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const bottomInset = getSafeBottomInset(insets);
   const { id } = useLocalSearchParams<{ id: string }>();
   const sessionId = Number(id);
 
@@ -142,7 +144,7 @@ export default function SessionDetailScreen() {
       <FlatList
         data={session.exercises}
         keyExtractor={(item) => item.exerciseId}
-        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + spacing.xl }]}
+        contentContainerStyle={[styles.list, { paddingBottom: bottomInset + spacing.xl }]}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <View style={styles.meta}>

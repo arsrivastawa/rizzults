@@ -1,8 +1,9 @@
 import type { PropsWithChildren, ReactNode } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/ui/text';
+import { getSafeBottomInset } from '@/lib/insets';
 import { colors, fontSize, spacing } from '@/theme/tokens';
 
 type Props = PropsWithChildren<{
@@ -12,15 +13,18 @@ type Props = PropsWithChildren<{
 }>;
 
 export function Screen({ title, scroll = true, headerRight, children }: Props) {
+  const insets = useSafeAreaInsets();
+  const bottomInset = getSafeBottomInset(insets, 16);
+
   const content = scroll ? (
     <ScrollView
       style={styles.scroll}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingBottom: bottomInset + spacing.xl }]}
       showsVerticalScrollIndicator={false}>
       {children}
     </ScrollView>
   ) : (
-    <View style={[styles.scroll, styles.content]}>{children}</View>
+    <View style={[styles.scroll, styles.content, { paddingBottom: bottomInset + spacing.xl }]}>{children}</View>
   );
 
   return (

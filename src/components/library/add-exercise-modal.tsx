@@ -2,8 +2,11 @@ import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import { Text } from '@/components/ui/text';
 import { TextField } from '@/components/ui/text-field';
+import { getSafeBottomInset, getSafeTopInset } from '@/lib/insets';
 import { useWorkoutStore } from '@/store/workout';
 import { colors, fontSize, radius, spacing } from '@/theme/tokens';
 import type { TrackingType } from '@/types';
@@ -23,6 +26,10 @@ const TRACKING_OPTIONS: { value: TrackingType; label: string }[] = [
 ];
 
 export function AddExerciseModal({ visible, onClose }: Props) {
+  const insets = useSafeAreaInsets();
+  const topInset = getSafeTopInset(insets);
+  const bottomInset = getSafeBottomInset(insets);
+
   const createCustomExercise = useWorkoutStore((s) => s.createCustomExercise);
   const [name, setName] = useState('');
   const [muscle, setMuscle] = useState('');
@@ -58,7 +65,7 @@ export function AddExerciseModal({ visible, onClose }: Props) {
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleClose}>
       <View style={styles.modal}>
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: topInset + spacing.sm }]}>
           <Pressable onPress={handleClose} hitSlop={8}>
             <Text variant="label">Cancel</Text>
           </Pressable>
@@ -71,9 +78,9 @@ export function AddExerciseModal({ visible, onClose }: Props) {
         </View>
 
         <KeyboardAwareScrollView
-          contentContainerStyle={styles.body}
+          contentContainerStyle={[styles.body, { paddingBottom: bottomInset + spacing.xl }]}
           keyboardShouldPersistTaps="handled"
-          bottomOffset={spacing.xl}>
+          bottomOffset={bottomInset + spacing.xl}>
           <TextField
             label="Name"
             value={name}

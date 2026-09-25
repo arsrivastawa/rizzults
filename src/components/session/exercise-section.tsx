@@ -3,24 +3,29 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { SetRow } from '@/components/session/set-row';
 import { Text } from '@/components/ui/text';
-import type { LastSet } from '@/db/repo';
-import { formatSetSummary } from '@/lib/units';
-import { useWorkoutStore } from '@/store/workout';
+import type { PreviousSet } from '@/db/repo';
+import { trackingFields } from '@/lib/tracking';
 import { colors, fontSize, radius, spacing } from '@/theme/tokens';
 import type { Exercise, SessionSet, SessionSetField } from '@/types';
 
 type Props = {
   exercise: Exercise;
   sets: SessionSet[];
-  last?: LastSet | null;
+  previousSetsMap?: Record<number, PreviousSet>;
   onChangeSet: (setId: number, field: SessionSetField, value: number | null) => void;
   onRemoveSet: (setId: number) => void;
   onAddSet: () => void;
 };
 
-export function ExerciseSection({ exercise, sets, last, onChangeSet, onRemoveSet, onAddSet }: Props) {
-  const unit = useWorkoutStore((s) => s.unit);
-  const summary = last ? formatSetSummary(exercise.trackingType, last, unit) : '';
+export function ExerciseSection({
+  exercise,
+  sets,
+  previousSetsMap,
+  onChangeSet,
+  onRemoveSet,
+  onAddSet,
+}: Props) {
+  const fields = trackingFields[exercise.trackingType];
 
   return (
     <View style={styles.card}>
@@ -28,11 +33,20 @@ export function ExerciseSection({ exercise, sets, last, onChangeSet, onRemoveSet
         <Text variant="heading" style={styles.name}>
           {exercise.name}
         </Text>
-        {summary ? (
-          <Text variant="label" style={styles.last}>
-            Last: {summary}
+      </View>
+      <View style={styles.columnHeaders}>
+        <Text variant="label" style={styles.colIndex}>
+          SET
+        </Text>
+        <Text variant="label" style={styles.colPrevious}>
+          PREVIOUS
+        </Text>
+        {fields.map((field) => (
+          <Text key={field.key} variant="label" style={styles.colInput}>
+            {field.label.toUpperCase()}
           </Text>
-        ) : null}
+        ))}
+        <View style={styles.colRemoveSpacer} />
       </View>
       <View style={styles.sets}>
         {sets.map((set, index) => (
@@ -41,6 +55,7 @@ export function ExerciseSection({ exercise, sets, last, onChangeSet, onRemoveSet
             index={index}
             trackingType={exercise.trackingType}
             set={set}
+            previousSet={previousSetsMap?.[set.setNumber] ?? null}
             onChange={(field, value) => onChangeSet(set.id, field, value)}
             onRemove={() => onRemoveSet(set.id)}
           />
@@ -74,8 +89,30 @@ const styles = StyleSheet.create({
     fontSize: fontSize.body,
     flexShrink: 1,
   },
-  last: {
-    flexShrink: 0,
+  columnHeaders: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  colIndex: {
+    width: 22,
+    textAlign: 'center',
+    fontSize: fontSize.caption,
+  },
+  colPrevious: {
+    minWidth: 60,
+    maxWidth: 90,
+    textAlign: 'center',
+    fontSize: fontSize.caption,
+    paddingHorizontal: spacing.xs,
+  },
+  colInput: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: fontSize.caption,
+  },
+  colRemoveSpacer: {
+    width: 32,
   },
   sets: {
     gap: spacing.sm,

@@ -1,6 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { getDb } from '@/db/database';
+import { seedIfEmpty } from '@/db/seed';
 import { formatDateLabel, formatTimeOfDay, toLocalDateString } from '@/lib/format';
 import type {
   ActiveSession,
@@ -377,32 +378,61 @@ export async function createCustomExercise(input: NewExerciseInput): Promise<Exe
   };
 }
 
-export type LastSet = {
+export type PreviousSet = {
+  exerciseId: string;
+  setNumber: number;
   weight: number | null;
   reps: number | null;
   durationSeconds: number | null;
   distance: number | null;
 };
 
-export async function getLastSet(exerciseId: string): Promise<LastSet | null> {
-  const row = await getDb().getFirstAsync<{ weight: number | null; reps: number | null; duration_seconds: number | null; distance: number | null }>(
-    `SELECT ss.weight, ss.reps, ss.duration_seconds, ss.distance
-     FROM session_sets ss
-     JOIN sessions s ON s.id = ss.session_id
-     WHERE ss.exercise_id = ? AND s.end_time IS NOT NULL
-     ORDER BY s.start_time DESC, ss.id DESC
-     LIMIT 1`,
-    exerciseId,
-  );
-  if (!row) {
-    return null;
+export async function getPreviousRoutineSets(
+  routineId: number | null,
+  currentSessionId: number,
+): Promise<Record<string, Record<number, PreviousSet>>> {
+  if (!routineId) {
+    return {};
   }
-  return {
-    weight: row.weight,
-    reps: row.reps,
-    durationSeconds: row.duration_seconds,
-    distance: row.distance,
-  };
+  const db = getDb();
+  const rows = await db.getAllAsync<{
+    exercise_id: string;
+    set_number: number;
+    weight: number | null;
+    reps: number | null;
+    duration_seconds: number | null;
+    distance: number | null;
+  }>(
+    `SELECT ss.exercise_id, ss.set_number, ss.weight, ss.reps, ss.duration_seconds, ss.distance
+     FROM session_sets ss
+     WHERE ss.session_id = (
+       SELECT id FROM sessions
+       WHERE routine_id = ?
+         AND id != ?
+         AND end_time IS NOT NULL
+       ORDER BY start_time DESC
+       LIMIT 1
+     )
+     ORDER BY ss.exercise_id, ss.set_number ASC`,
+    routineId,
+    currentSessionId,
+  );
+
+  const result: Record<string, Record<number, PreviousSet>> = {};
+  for (const r of rows) {
+    if (!result[r.exercise_id]) {
+      result[r.exercise_id] = {};
+    }
+    result[r.exercise_id][r.set_number] = {
+      exerciseId: r.exercise_id,
+      setNumber: r.set_number,
+      weight: r.weight,
+      reps: r.reps,
+      durationSeconds: r.duration_seconds,
+      distance: r.distance,
+    };
+  }
+  return result;
 }
 
 export async function renameRoutine(routineId: number, name: string): Promise<void> {
@@ -518,11 +548,20 @@ async function insertRows(
   if (rows.length === 0) {
     return;
   }
-  const columns = Object.keys(rows[0]);
+  const columnSet = new Set<string>();
+  for (const row of rows) {
+    for (const key of Object.keys(row)) {
+      columnSet.add(key);
+    }
+  }
+  const columns = Array.from(columnSet);
+  if (columns.length === 0) {
+    return;
+  }
   const placeholders = columns.map(() => '?').join(', ');
   const sql = `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${placeholders})`;
   for (const row of rows) {
-    await db.runAsync(sql, columns.map((c) => row[c]));
+    await db.runAsync(sql, columns.map((c) => row[c] ?? null));
   }
 }
 
@@ -540,6 +579,7 @@ export async function restoreDatabaseData(data: BackupData): Promise<void> {
       await insertRows(db, 'sessions', data.sessions ?? []);
       await insertRows(db, 'session_sets', data.session_sets ?? []);
       await insertRows(db, 'settings', data.settings ?? []);
+      await seedIfEmpty(db);
     });
   } finally {
     await db.execAsync('PRAGMA foreign_keys = ON;');

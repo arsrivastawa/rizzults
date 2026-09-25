@@ -46,11 +46,15 @@ export async function createBackup(): Promise<void> {
 }
 
 export async function pickBackupFile(): Promise<BackupData | null> {
-  const picked = await File.pickFileAsync({ mimeTypes: ['application/json'] });
+  const picked = await File.pickFileAsync({ mimeTypes: ['application/json', 'text/plain', '*/*'] });
   if (picked.canceled || !picked.result) {
     return null;
   }
-  const content = await picked.result.text();
+  const file = Array.isArray(picked.result) ? picked.result[0] : picked.result;
+  if (!file) {
+    return null;
+  }
+  const content = await file.text();
   return JSON.parse(content) as BackupData;
 }
 
