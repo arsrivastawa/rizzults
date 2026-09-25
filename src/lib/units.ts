@@ -32,35 +32,36 @@ export function formatPreviousSet(
   if (!set) {
     return '-';
   }
+  const rirSuffix = set.rir != null ? ` @${set.rir}` : '';
   switch (trackingType) {
     case 'weight_reps': {
-      const w = set.weight != null ? `${formatWeight(set.weight, unit)}${unit}` : null;
+      const w = set.weight != null ? formatWeight(set.weight, unit) : null;
       const r = set.reps != null ? `${set.reps}` : null;
-      if (w && r) return `${w} x ${r}`;
-      if (w) return w;
-      if (r) return `${r} reps`;
+      if (w && r) return `${w}x${r}${rirSuffix}`;
+      if (w) return `${w}${rirSuffix}`;
+      if (r) return `${r} reps${rirSuffix}`;
       return '-';
     }
     case 'bodyweight_reps':
-      return set.reps != null ? `${set.reps} reps` : '-';
+      return set.reps != null ? `${set.reps} reps${rirSuffix}` : '-';
     case 'count':
-      return set.reps != null ? `${set.reps}` : '-';
+      return set.reps != null ? `${set.reps}${rirSuffix}` : '-';
     case 'time':
-      return set.durationSeconds != null ? formatClock(set.durationSeconds) : '-';
+      return set.durationSeconds != null ? `${formatClock(set.durationSeconds)}${rirSuffix}` : '-';
     case 'weight_time': {
-      const w = set.weight != null ? `${formatWeight(set.weight, unit)}${unit}` : null;
+      const w = set.weight != null ? formatWeight(set.weight, unit) : null;
       const t = set.durationSeconds != null ? formatClock(set.durationSeconds) : null;
-      if (w && t) return `${w} x ${t}`;
-      if (w) return w;
-      if (t) return t;
+      if (w && t) return `${w}x${t}${rirSuffix}`;
+      if (w) return `${w}${rirSuffix}`;
+      if (t) return `${t}${rirSuffix}`;
       return '-';
     }
     case 'distance_time': {
       const d = set.distance != null ? `${formatNumber(set.distance)}km` : null;
       const t = set.durationSeconds != null ? formatClock(set.durationSeconds) : null;
-      if (d && t) return `${d} x ${t}`;
-      if (d) return d;
-      if (t) return t;
+      if (d && t) return `${d}x${t}${rirSuffix}`;
+      if (d) return `${d}${rirSuffix}`;
+      if (t) return `${t}${rirSuffix}`;
       return '-';
     }
     default:

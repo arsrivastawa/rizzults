@@ -40,6 +40,7 @@ type WorkoutStore = {
   createCustomExercise: (input: NewExerciseInput) => Promise<void>;
 
   startSession: (routineId: number) => Promise<void>;
+  updateBodyweight: (bodyweight: number | null) => Promise<void>;
   addSet: (exerciseId: string) => Promise<void>;
   removeSet: (setId: number) => Promise<void>;
   updateSet: (setId: number, field: SessionSetField, value: number | null) => Promise<void>;
@@ -135,6 +136,20 @@ export const useWorkoutStore = create<WorkoutStore>()((set, get) => ({
     const activeSession = await repo.createSession(routineId);
     const previousSets = await loadPreviousSets(activeSession);
     set({ activeSession, previousSets });
+  },
+
+  updateBodyweight: async (bodyweight) => {
+    const active = get().activeSession;
+    if (!active) {
+      return;
+    }
+    await repo.updateSessionBodyweight(active.id, bodyweight);
+    set({
+      activeSession: {
+        ...active,
+        bodyweight,
+      },
+    });
   },
 
   addSet: async (exerciseId) => {

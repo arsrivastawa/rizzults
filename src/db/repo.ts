@@ -38,6 +38,8 @@ type RoutineExerciseRow = {
   target_sets: number | null;
   target_rep_min: number | null;
   target_rep_max: number | null;
+  target_rir: number | null;
+  target_rest_seconds: number | null;
 };
 
 type SessionRow = {
@@ -46,6 +48,7 @@ type SessionRow = {
   start_time: string;
   duration_seconds: number | null;
   routine_name: string | null;
+  bodyweight: number | null;
 };
 
 type SessionSetRow = {
@@ -57,6 +60,7 @@ type SessionSetRow = {
   reps: number | null;
   duration_seconds: number | null;
   distance: number | null;
+  rir: number | null;
   is_warmup: number;
   completed: number;
 };
@@ -66,6 +70,7 @@ const SET_FIELDS: Record<SessionSetField, string> = {
   reps: 'reps',
   durationSeconds: 'duration_seconds',
   distance: 'distance',
+  rir: 'rir',
 };
 
 function mapExerciseRow(r: ExerciseRow): Exercise {
@@ -93,6 +98,7 @@ function mapSetRow(r: SessionSetRow): SessionSet {
     reps: r.reps,
     durationSeconds: r.duration_seconds,
     distance: r.distance,
+    rir: r.rir ?? null,
     isWarmup: r.is_warmup === 1,
     completed: r.completed === 1,
   };
@@ -100,7 +106,7 @@ function mapSetRow(r: SessionSetRow): SessionSet {
 
 async function loadSessionExercises(db: SQLiteDatabase, sessionId: number): Promise<SessionExercise[]> {
   const rows = await db.getAllAsync<SessionSetRow>(
-    `SELECT id, exercise_id, exercise_order, set_number, weight, reps, duration_seconds, distance, is_warmup, completed
+    `SELECT id, exercise_id, exercise_order, set_number, weight, reps, duration_seconds, distance, rir, is_warmup, completed
      FROM session_sets WHERE session_id = ? ORDER BY exercise_order, set_number, id`,
     sessionId,
   );
@@ -130,7 +136,7 @@ export async function listRoutines(): Promise<Routine[]> {
     `SELECT id, name, notes FROM routines ORDER BY position IS NULL, position, id`,
   );
   const reRows = await db.getAllAsync<RoutineExerciseRow>(
-    `SELECT id, routine_id, exercise_id, position, target_sets, target_rep_min, target_rep_max
+    `SELECT id, routine_id, exercise_id, position, target_sets, target_rep_min, target_rep_max, target_rir, target_rest_seconds
      FROM routine_exercises ORDER BY routine_id, position, id`,
   );
   const byRoutine = new Map<number, RoutineExercise[]>();
@@ -142,6 +148,8 @@ export async function listRoutines(): Promise<Routine[]> {
       targetSets: r.target_sets,
       targetRepMin: r.target_rep_min,
       targetRepMax: r.target_rep_max,
+      targetRir: r.target_rir,
+      targetRestSeconds: r.target_rest_seconds,
     });
     byRoutine.set(r.routine_id, list);
   }
@@ -204,8 +212,8 @@ export async function addSessionSet(
 ): Promise<SessionSet> {
   const db = getDb();
   const result = await db.runAsync(
-    `INSERT INTO session_sets (session_id, exercise_id, exercise_order, set_number, weight, reps, duration_seconds, distance, rpe, is_warmup, completed)
-     VALUES (?, ?, ?, ?, NULL, NULL, NULL, NULL, NULL, 0, 1)`,
+    `INSERT INTO session_sets (session_id, exercise_id, exercise_order, set_number, weight, reps, duration_seconds, distance, rpe, rir, is_warmup, completed)
+     VALUES (?, ?, ?, ?, NULL, NULL, NULL, NULL, NULL, NULL, 0, 1)`,
     sessionId,
     exerciseId,
     order,
@@ -219,6 +227,7 @@ export async function addSessionSet(
     reps: null,
     durationSeconds: null,
     distance: null,
+    rir: null,
     isWarmup: false,
     completed: true,
   };
@@ -231,6 +240,10 @@ export async function updateSessionSet(setId: number, field: SessionSetField, va
 
 export async function deleteSessionSet(setId: number): Promise<void> {
   await getDb().runAsync(`DELETE FROM session_sets WHERE id = ?`, setId);
+}
+
+export async function updateSessionBodyweight(sessionId: number, bodyweight: number | null): Promise<void> {
+  await getDb().runAsync(`UPDATE sessions SET bodyweight = ? WHERE id = ?`, bodyweight, sessionId);
 }
 
 export async function createSession(routineId: number | null): Promise<ActiveSession> {
@@ -265,13 +278,13 @@ export async function createSession(routineId: number | null): Promise<ActiveSes
     exercises.push({ exerciseId: o.exerciseId, order: o.index, sets: [set] });
   }
 
-  return { id: sessionId, routineId, routineName, startedAt: now.getTime(), exercises };
+  return { id: sessionId, routineId, routineName, bodyweight: null, startedAt: now.getTime(), exercises };
 }
 
 export async function getActiveSession(): Promise<ActiveSession | null> {
   const db = getDb();
-  const row = await db.getFirstAsync<{ id: number; routine_id: number | null; start_time: string }>(
-    `SELECT id, routine_id, start_time FROM sessions WHERE end_time IS NULL ORDER BY start_time DESC, id DESC LIMIT 1`,
+  const row = await db.getFirstAsync<{ id: number; routine_id: number | null; start_time: string; bodyweight: number | null }>(
+    `SELECT id, routine_id, start_time, bodyweight FROM sessions WHERE end_time IS NULL ORDER BY start_time DESC, id DESC LIMIT 1`,
   );
   if (!row) {
     return null;
@@ -286,6 +299,7 @@ export async function getActiveSession(): Promise<ActiveSession | null> {
     id: row.id,
     routineId: row.routine_id,
     routineName,
+    bodyweight: row.bodyweight ?? null,
     startedAt: Date.parse(row.start_time),
     exercises,
   };
@@ -302,7 +316,7 @@ export async function finishSession(sessionId: number): Promise<void> {
 export async function listSessions(): Promise<Session[]> {
   const db = getDb();
   const rows = await db.getAllAsync<SessionRow>(
-    `SELECT s.id, s.date, s.start_time, s.duration_seconds, r.name AS routine_name
+    `SELECT s.id, s.date, s.start_time, s.duration_seconds, s.bodyweight, r.name AS routine_name
      FROM sessions s LEFT JOIN routines r ON r.id = s.routine_id
      WHERE s.end_time IS NOT NULL
      ORDER BY s.date DESC, s.start_time DESC, s.id DESC`,
@@ -313,6 +327,7 @@ export async function listSessions(): Promise<Session[]> {
     sessions.push({
       id: r.id,
       routineName: r.routine_name,
+      bodyweight: r.bodyweight ?? null,
       dateLabel: formatDateLabel(startedAt),
       startTime: formatTimeOfDay(startedAt),
       durationSeconds: r.duration_seconds,
@@ -385,6 +400,7 @@ export type PreviousSet = {
   reps: number | null;
   durationSeconds: number | null;
   distance: number | null;
+  rir: number | null;
 };
 
 export async function getPreviousRoutineSets(
@@ -402,8 +418,9 @@ export async function getPreviousRoutineSets(
     reps: number | null;
     duration_seconds: number | null;
     distance: number | null;
+    rir: number | null;
   }>(
-    `SELECT ss.exercise_id, ss.set_number, ss.weight, ss.reps, ss.duration_seconds, ss.distance
+    `SELECT ss.exercise_id, ss.set_number, ss.weight, ss.reps, ss.duration_seconds, ss.distance, ss.rir
      FROM session_sets ss
      WHERE ss.session_id = (
        SELECT id FROM sessions
@@ -430,6 +447,7 @@ export async function getPreviousRoutineSets(
       reps: r.reps,
       durationSeconds: r.duration_seconds,
       distance: r.distance,
+      rir: r.rir ?? null,
     };
   }
   return result;

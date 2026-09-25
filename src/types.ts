@@ -26,6 +26,8 @@ export type RoutineExercise = {
   targetSets: number | null;
   targetRepMin: number | null;
   targetRepMax: number | null;
+  targetRir?: number | null;
+  targetRestSeconds?: number | null;
 };
 
 export type Routine = {
@@ -35,7 +37,7 @@ export type Routine = {
   exercises: RoutineExercise[];
 };
 
-export type SessionSetField = 'weight' | 'reps' | 'durationSeconds' | 'distance';
+export type SessionSetField = 'weight' | 'reps' | 'durationSeconds' | 'distance' | 'rir';
 
 export type SessionSet = {
   id: number;
@@ -45,6 +47,11 @@ export type SessionSet = {
   reps: number | null;
   durationSeconds: number | null;
   distance: number | null;
+  rir: number | null;
+  restSeconds?: number | null;
+  loadBasis?: string;
+  supersetGroup?: number | null;
+  notes?: string | null;
   isWarmup: boolean;
   completed: boolean;
 };
@@ -58,6 +65,7 @@ export type SessionExercise = {
 export type Session = {
   id: number;
   routineName: string | null;
+  bodyweight: number | null;
   dateLabel: string;
   startTime: string;
   durationSeconds: number | null;
@@ -68,6 +76,7 @@ export type ActiveSession = {
   id: number;
   routineId: number | null;
   routineName: string | null;
+  bodyweight: number | null;
   startedAt: number;
   exercises: SessionExercise[];
 };

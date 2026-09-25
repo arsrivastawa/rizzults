@@ -68,6 +68,20 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 `,
   `
+ALTER TABLE sessions ADD COLUMN bodyweight REAL;
+
+ALTER TABLE routine_exercises ADD COLUMN target_rir REAL CHECK (target_rir IS NULL OR target_rir BETWEEN 0 AND 10);
+ALTER TABLE routine_exercises ADD COLUMN target_rest_seconds INTEGER;
+
+ALTER TABLE session_sets ADD COLUMN rest_seconds INTEGER;
+ALTER TABLE session_sets ADD COLUMN rir REAL CHECK (rir IS NULL OR rir BETWEEN 0 AND 10);
+ALTER TABLE session_sets ADD COLUMN load_basis TEXT NOT NULL DEFAULT 'total';
+ALTER TABLE session_sets ADD COLUMN superset_group INTEGER;
+ALTER TABLE session_sets ADD COLUMN notes TEXT;
+
+CREATE INDEX IF NOT EXISTS idx_session_sets_exercise_session ON session_sets(exercise_id, session_id);
+CREATE INDEX IF NOT EXISTS idx_session_sets_session_order ON session_sets(session_id, exercise_order, set_number);
+CREATE INDEX IF NOT EXISTS idx_sessions_date ON sessions(date DESC);
 CREATE INDEX IF NOT EXISTS idx_sessions_routine_start ON sessions(routine_id, start_time DESC);
 CREATE INDEX IF NOT EXISTS idx_session_sets_session_exercise ON session_sets(session_id, exercise_id, set_number);
 `,

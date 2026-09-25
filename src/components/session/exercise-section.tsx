@@ -46,6 +46,9 @@ export function ExerciseSection({
             {field.label.toUpperCase()}
           </Text>
         ))}
+        <Text variant="label" style={styles.colRir}>
+          RIR
+        </Text>
         <View style={styles.colRemoveSpacer} />
       </View>
       <View style={styles.sets}>
@@ -95,19 +98,24 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   colIndex: {
-    width: 22,
+    width: 20,
     textAlign: 'center',
     fontSize: fontSize.caption,
   },
   colPrevious: {
-    minWidth: 60,
-    maxWidth: 90,
+    minWidth: 54,
+    maxWidth: 84,
     textAlign: 'center',
     fontSize: fontSize.caption,
     paddingHorizontal: spacing.xs,
   },
   colInput: {
     flex: 1,
+    textAlign: 'center',
+    fontSize: fontSize.caption,
+  },
+  colRir: {
+    width: 44,
     textAlign: 'center',
     fontSize: fontSize.caption,
   },

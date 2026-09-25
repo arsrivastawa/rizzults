@@ -13,7 +13,7 @@ import { trackingFields, type TrackingField } from '@/lib/tracking';
 import { getSafeBottomInset } from '@/lib/insets';
 import { useWorkoutStore } from '@/store/workout';
 import { colors, fontSize, radius, spacing } from '@/theme/tokens';
-import type { SessionExercise } from '@/types';
+import type { SessionExercise, SessionSet } from '@/types';
 
 function SetValue({ text, unit }: { text: string; unit: string }) {
   return (
@@ -36,7 +36,7 @@ function SetLine({
 }: {
   index: number;
   fields: TrackingField[];
-  set: { weight: number | null; reps: number | null; durationSeconds: number | null; distance: number | null };
+  set: SessionSet;
   unit: Unit;
 }) {
   return (
@@ -52,6 +52,9 @@ function SetLine({
         const unitLabel = isWeight ? unit : field.unit;
         return <SetValue key={field.key} text={text} unit={unitLabel} />;
       })}
+      {set.rir != null && (
+        <SetValue text={set.rir >= 4 ? '4+' : String(set.rir)} unit="rir" />
+      )}
     </View>
   );
 }
@@ -150,6 +153,9 @@ export default function SessionDetailScreen() {
           <View style={styles.meta}>
             <Text variant="label">
               {session.dateLabel}, {session.startTime}
+              {session.bodyweight != null
+                ? ` • ${formatNumber(toDisplayWeight(session.bodyweight, unit))} ${unit}`
+                : ''}
             </Text>
             <Text variant="numeral" style={styles.duration}>
               {formatDuration(session.durationSeconds ?? 0)}
